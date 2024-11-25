@@ -26,22 +26,29 @@ end
 
 #Given an underdetermined, rank defficient system Ax = b, compute the least-norm solution with Golub-Riley iteration
 # TODO: add something for rank defficient least squares as well (i.e compute (Aᵀ)†z)
-function qrm_golub_riley!(spmat :: qrm_spmat{T},  xₖ :: AbstractVector{T} , b :: AbstractVector{T}, bₖ :: AbstractVector{T}, Δx ::AbstractVector{T}; α :: T = eps(T)^(1//4), max_iter ::Int = 10, tol ::T = T(1e-3)) where {T <: Real}
+function qrm_golub_riley!(
+  spmat :: qrm_spmat{T},  
+  xₖ :: AbstractVector{T}, 
+  Δx ::AbstractVector{T},
+  bₖ :: AbstractVector{T},
+  b :: AbstractVector{T};  
+  α :: T = eps(T)^(1//4), 
+  max_iter ::Int = 10, tol ::T = T(1e-3)
+  ) where {T <: Real}
   
-  n_A = spmat.mat.n - spmat.mat.m
   m = spmat.mat.m
   nz = spmat.mat.nz
   n = spmat.mat.n - spmat.mat.m # The matrix A is (m,n), spmat represents a (m,n+m) matrix
 
   @assert n > 0
+  @assert all(spmat.irn[i + nz - m] == Cint(i) for i = 1:m)
+  @assert all(spmat.jcn[i + nz - m] == Cint(i+n) for i = 1:m)
+  spmat.val[nz - m + 1:nz] .= α
   @assert length(b) == spmat.mat.m
   @assert length(xₖ) == spmat.mat.n
   @assert length(bₖ) == spmat.mat.m
   @assert length(Δx) == spmat.mat.n
-  @assert all(spmat.irn[i + nz - m] == Cint(i) for i = 1:m )
-  @assert all(spmat.jcn[i + nz - m] == Cint(i+n) for i = 1:m)
-  spmat.val[nz-m + 1:nz] .= α
-
+ 
   spfct = qrm_spfct_init(spmat)
   qrm_set(spfct, "qrm_keeph", 0)
   qrm_analyse!(spmat, spfct, transp ='t')
@@ -63,6 +70,7 @@ function qrm_golub_riley!(spmat :: qrm_spmat{T},  xₖ :: AbstractVector{T} , b 
     @. xₖ = xₖ + Δx
     
     solved = norm(Δx) ≤ tol*norm(xₖ)
+    println(norm(bₖ))
     k = k + 1
   end
 end
