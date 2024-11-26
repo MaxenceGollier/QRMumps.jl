@@ -23,3 +23,21 @@ function qrm_refine!(spmat :: qrm_spmat{T}, spfct :: qrm_spfct{T}, x :: Abstract
   qrm_solve!(spfct, y, Δx, transp = 'n')
   @. x = x + Δx
 end
+
+function qrm_semi_normal!(spmat :: qrm_spmat{T}, spfct :: qrm_spfct{T}, x :: AbstractVector{T}, b :: AbstractVector{T}, Δx :: AbstractVector{T}, y :: AbstractVector{T}; type :: String = "min_norm") where T
+  #@assert length(x) == spfct.fct.n
+  transp = T <: Real ? 't' : 'c'
+  
+  if type == "min_norm"
+    qrm_analyse!(spmat, spfct, transp = transp)
+    qrm_factorize!(spmat, spfct, transp = transp)
+    qrm_solve!(spfct, b, Δx, transp = transp)
+    qrm_solve!(spfct, Δx, y, transp = 'n')
+    #x = A^T y
+    qrm_spmat_mv!(spmat, T(1),  y, T(0), x, transp = transp)
+
+  elseif type == "least_squares"
+    return
+  end
+  return 
+end

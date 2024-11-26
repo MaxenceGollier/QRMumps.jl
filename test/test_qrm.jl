@@ -544,5 +544,23 @@ end
     x = qrm_solve(spfct, x₁, transp = 'n')
     x_refined = qrm_refine(spmat, spfct, x, b)
     @test norm(b - A'*(A*x)) ≥ norm(b - A'*(A*x_refined))
+
+    tol = (real(T) == Float32) ? 1e-3 : 1e-12
+    qrm_init()
+    A = sprand(T, n, m, 0.3)
+    b = rand(T, n)
+
+    spmat = qrm_spmat_init(A)
+    spfct = qrm_spfct_init(spmat)
+    qrm_set(spfct, "qrm_keeph", 0)
+    x = zeros(T, m)
+    Δx = similar(x)
+    y = zeros(T, n)
+    qrm_semi_normal!(spmat, spfct, x, b, Δx, y)
+
+    x2 = qrm_min_norm(spmat, b)
+
+    @test norm(A*x - b) ≤ tol
+    @test abs(norm(x) - norm(x2)) ≤ tol
   end
 end
