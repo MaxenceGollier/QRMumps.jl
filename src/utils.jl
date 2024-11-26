@@ -37,7 +37,12 @@ function qrm_semi_normal!(spmat :: qrm_spmat{T}, spfct :: qrm_spfct{T}, x :: Abs
     qrm_spmat_mv!(spmat, T(1),  y, T(0), x, transp = transp)
 
   elseif type == "least_squares"
-    return
+    qrm_analyse!(spmat, spfct, transp  = 'n')
+    qrm_factorize!(spmat, spfct, transp = 'n')
+    # x = A^T b
+    qrm_spmat_mv!(spmat, T(1),  b, T(0), x, transp = transp)
+    qrm_solve!(spfct, x, y, transp = transp)
+    qrm_solve!(spfct, y, x, transp = 'n')
   end
   return 
 end
